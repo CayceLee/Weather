@@ -2,6 +2,8 @@ package com.example.weather
 
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.location.Address
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
@@ -36,6 +38,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.Locale
 
 
 class MainActivity : ComponentActivity() {
@@ -90,7 +93,9 @@ class MainActivity : ComponentActivity() {
 
 //                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     mainScreenUI(
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        lat = lat,
+                        lon = lon
                     )
 //                    DisplayLatLon(
 //                        lat = lat,
@@ -116,14 +121,17 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun mainScreenUI(modifier: Modifier) {
-        val searchBarVM = SearchBarViewModel()
+    fun mainScreenUI(modifier: Modifier, lat: Double, lon: Double) {
 
-        val searchText by searchBarVM.searchText.collectAsState()
-        val isSearching by searchBarVM.isSearching.collectAsState()
+        val geocoder = Geocoder(this, Locale.getDefault())
+        val addresses: List<Address>? = geocoder.getFromLocation(lat, lon, 1)
+
+        val cityName: String = addresses?.get(0)?.locality ?: ""
+        val stateName: String = addresses?.get(0)?.adminArea ?: ""
 
         Box(
-            modifier = modifier.fillMaxWidth()
+            modifier = modifier
+                .fillMaxWidth()
                 .background(
                     color = Color.Black,
                 )
@@ -141,26 +149,20 @@ class MainActivity : ComponentActivity() {
                         Color.White
                     },
                     fontSize = 24.sp,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
                         .padding(
                             top = 40.dp,
                             bottom = 40.dp
                         )
                 )
-                SearchBar(
-                    query = searchText,//text showed on SearchBar
-                    onQueryChange = searchBarVM::onSearchTextChange, //update the value of searchText
-                    onSearch = searchBarVM::onSearchTextChange, //the callback to be invoked when the input service triggers the ImeAction.Search action
-                    active = isSearching, //whether the user is searching or not
-                    onActiveChange = { searchBarVM.onToogleSearch() }, //the callback to be invoked when this search bar's active state is changed
+                Text(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    LazyColumn {
-
-                    }
-                }
+                        .padding(16.dp),
+                    text = "$cityName , $stateName",
+                    color = Color.White
+                )
             }
 
 
