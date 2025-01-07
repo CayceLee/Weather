@@ -9,15 +9,14 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,24 +27,29 @@ import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.requestPermissions
+import androidx.lifecycle.ViewModel
+import com.example.weather.data.WeatherMetaDataModel
+import com.example.weather.data.repo.WeatherServiceRepository
+import com.example.weather.data.service.WeatherService
 import com.example.weather.ui.theme.WeatherTheme
+import com.example.weather.viewmodels.WeatherServiceViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import kotlinx.coroutines.flow.collect
+
 import java.util.Locale
 
 
 class MainActivity : ComponentActivity() {
     private lateinit var fusedLocationProvider: FusedLocationProviderClient
-    private lateinit var weatherService: WeatherService
     private val apiKey = "MY_WEATHER_API_KEY"
-
+    private val weatherServiceVM: WeatherServiceViewModel by viewModels()
 
     //    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,37 +81,29 @@ class MainActivity : ComponentActivity() {
 
         fusedLocationProvider.lastLocation.addOnSuccessListener(this) { location: Location? ->
             if (location != null) {
-                lat = location.latitude
-                lon = location.longitude
+                weatherServiceVM.retrieveWeather(
+                    "${location.latitude},${location.longitude}"
+                )
             }
-        weatherService = Retrofit.Builder()
-            .baseUrl("https://api.weather.gov/points/$lat,$lon/forecast/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(WeatherService::class.java)
-
-        Log.d("Weather: ", "$weatherService")
+        }
 
         setContent {
             WeatherTheme {
-
-//                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     mainScreenUI(
                         modifier = Modifier.fillMaxSize(),
                         lat = lat,
                         lon = lon
                     )
-//                    DisplayLatLon(
-//                        lat = lat,
-//                        lon = lon,
-//                        modifier = Modifier.padding(innerPadding)
-//                    )
                 }
 
             }
-//        }
         }
-    }
+
+    /*
+    Create multiple domain models for properties and forecast
+    Parse model into domain model into usable vars
+    Repository ("datamodel") > Domain Model > VM > UI
+     */
 
     @Composable
     fun DisplayLatLon(lat: Double?, lon: Double?, modifier: Modifier = Modifier) {
@@ -119,15 +115,15 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun mainScreenUI(modifier: Modifier, lat: Double, lon: Double) {
+        val state by weatherServiceVM.stateFlow.collectAsState()
 
-        val geocoder = Geocoder(this, Locale.getDefault())
+        val geocoder = Geocoder(LocalContext.current, Locale.getDefault())
         val addresses: List<Address>? = geocoder.getFromLocation(lat, lon, 1)
 
-        val cityName: String = addresses?.get(0)?.locality ?: ""
-        val stateName: String = addresses?.get(0)?.adminArea ?: ""
+        val cityName: String = addresses?.firstOrNull()?.locality ?: ""
+        val stateName: String = addresses?.firstOrNull()?.adminArea ?: ""
 
         Box(
             modifier = modifier
@@ -142,8 +138,8 @@ class MainActivity : ComponentActivity() {
         ) {
             Column {
                 Text(
-                    "WeatherDotGov",
-                    color = if(LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    text = state.forecast,
+                    color = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                         Color.Black
                     } else {
                         Color.White
@@ -166,8 +162,6 @@ class MainActivity : ComponentActivity() {
             }
 
 
-
         }
-
     }
 }

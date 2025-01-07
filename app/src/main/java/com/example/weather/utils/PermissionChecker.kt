@@ -1,4 +1,4 @@
-package com.example.weather
+package com.example.weather.utils
 
 import android.app.Activity
 import android.content.Context
