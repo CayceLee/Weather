@@ -1,5 +1,6 @@
 [versions]
 agp = "8.7.3"
+androidxLifecycleRuntimeKtx = "2.4.0"
 converterGson = "2.9.0"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
@@ -15,6 +16,7 @@ playServicesLocation = "21.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx-v240 = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidxLifecycleRuntimeKtx" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

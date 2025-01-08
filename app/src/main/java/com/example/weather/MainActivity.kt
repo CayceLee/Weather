@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,25 +32,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.requestPermissions
-import androidx.lifecycle.ViewModel
-import com.example.weather.data.WeatherMetaDataModel
-import com.example.weather.data.repo.WeatherServiceRepository
-import com.example.weather.data.service.WeatherService
 import com.example.weather.ui.theme.WeatherTheme
+import com.example.weather.viewmodels.ForecastServiceViewModel
 import com.example.weather.viewmodels.WeatherServiceViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.flow.collect
 
 import java.util.Locale
 
 
 class MainActivity : ComponentActivity() {
     private lateinit var fusedLocationProvider: FusedLocationProviderClient
-    private val apiKey = "MY_WEATHER_API_KEY"
     private val weatherServiceVM: WeatherServiceViewModel by viewModels()
+    private val forecastServiceVM: ForecastServiceViewModel by viewModels()
 
-    //    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -85,11 +79,12 @@ class MainActivity : ComponentActivity() {
                     "${location.latitude},${location.longitude}"
                 )
             }
+
         }
 
         setContent {
             WeatherTheme {
-                    mainScreenUI(
+                    MainScreenUI(
                         modifier = Modifier.fillMaxSize(),
                         lat = lat,
                         lon = lon
@@ -106,18 +101,21 @@ class MainActivity : ComponentActivity() {
      */
 
     @Composable
-    fun DisplayLatLon(lat: Double?, lon: Double?, modifier: Modifier = Modifier) {
-        val url =  "https://api.weather.gov/points/$lat,$lon/forecast"
+    fun MainScreenUI(modifier: Modifier, lat: Double, lon: Double) {
+        val weatherState by weatherServiceVM.stateFlow.collectAsState()
+        Log.d("stateForecast: ", weatherState.forecast)
 
-        Text(
-            text = "Latitude: $lat \nLongitude: $lon",
-            modifier = modifier
+        forecastServiceVM.retrieveForecast(
+            weatherState.gridId, weatherState.gridX, weatherState.gridY
         )
-    }
 
-    @Composable
-    fun mainScreenUI(modifier: Modifier, lat: Double, lon: Double) {
-        val state by weatherServiceVM.stateFlow.collectAsState()
+        val forecastState by forecastServiceVM.stateFlow.collectAsState()
+
+//        Log.d("Forecast: ", currentWeatherForecast.toString())
+        Log.d("stateForecastgridID: ", weatherState.gridId)
+        Log.d("stateForecastGridX: ", "${weatherState.gridX}")
+        Log.d("stateForecastGridY: ", "${weatherState.gridY}")
+        Log.d("periods: ", "${forecastState.period}")
 
         val geocoder = Geocoder(LocalContext.current, Locale.getDefault())
         val addresses: List<Address>? = geocoder.getFromLocation(lat, lon, 1)
@@ -138,7 +136,7 @@ class MainActivity : ComponentActivity() {
         ) {
             Column {
                 Text(
-                    text = state.forecast,
+                    text = "WeatherDotGOV",
                     color = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                         Color.Black
                     } else {
@@ -156,7 +154,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    text = "$cityName , $stateName",
+                    text = "${weatherState.city} , ${weatherState.state}",
                     color = Color.White
                 )
             }

@@ -1,13 +1,21 @@
 package com.example.weather.ui
 
-import kotlin.io.encoding.Base64
-
-data class WeeklyWeatherViewState (
-    val forecast: String
+data class WeeklyWeatherViewState(
+    val gridId: String,
+    val gridX: Int,
+    val gridY: Int,
+    val forecast: String,
+    val city: String,
+    val state: String
 ) {
     companion object {
         val Default = WeeklyWeatherViewState(
-            forecast = ""
+            gridId = "",
+            gridX = 0,
+            gridY = 0,
+            forecast = "",
+            city = "",
+            state = ""
         )
     }
 }
