@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.weather.data.repo.WeatherServiceRepository
 import com.example.weather.ui.WeeklyForecastViewState
-import com.example.weather.ui.WeeklyWeatherViewState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
