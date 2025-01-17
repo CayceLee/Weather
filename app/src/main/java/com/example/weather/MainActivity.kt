@@ -26,15 +26,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.substring
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -46,9 +42,7 @@ import com.example.weather.viewmodels.ForecastServiceViewModel
 import com.example.weather.viewmodels.WeatherServiceViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import okhttp3.internal.trimSubstring
 import java.util.Calendar
-import java.util.Date
 
 
 class MainActivity : ComponentActivity() {
@@ -113,7 +107,6 @@ class MainActivity : ComponentActivity() {
             weatherState.gridId, weatherState.gridX, weatherState.gridY
         )
 
-        val forecastState by forecastServiceVM.stateFlow.collectAsState()
         val day1State by forecastServiceVM.day1StateFlow.collectAsState()
         val nightState1 by forecastServiceVM.night1StateFlow.collectAsState()
         val day2State by forecastServiceVM.day2StateFlow.collectAsState()
@@ -143,7 +136,7 @@ class MainActivity : ComponentActivity() {
 //        Log.d("stateForecastgridID: ", weatherState.gridId)
 //        Log.d("stateForecastGridX: ", "${weatherState.gridX}")
 //        Log.d("stateForecastGridY: ", "${weatherState.gridY}")
-        Log.d("periods: ", "${forecastState.period}")
+//        Log.d("periods: ", "${forecastState.period}")
 //
 //        Log.d("day1state forecast: ","$day1State")
 //        Log.d("day2State forecast from list: ", "${listOfStates[0]}")
@@ -152,23 +145,15 @@ class MainActivity : ComponentActivity() {
             Column (
                 modifier = Modifier
                     .fillMaxSize()
-                    .paint(
-                        rememberAsyncImagePainter(
-                            model = if (dayTime()) {
-                                day1State.icon
-                            } else {
-                                nightState1.icon
-                                   },
-                            contentScale = ContentScale.FillBounds,
-                        ), contentScale = ContentScale.FillBounds
-                    )
+                    .background(Color.Black)
+
             ) {
                 Row (
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 ){
                     Text(
                         modifier = Modifier
-                            .padding(start = 20.dp, top = 40.dp),
+                            .padding(start = 20.dp, top = 50.dp),
                         text = "${weatherState.city} , ${weatherState.state}",
                         color = White
                     )
@@ -189,12 +174,26 @@ class MainActivity : ComponentActivity() {
                     } else {
                         nightState1.shortForecast
                     },
-                    fontSize = 30.sp,
+                    fontSize = 20.sp,
                     color = White
                 )
 
+                Box(
+                    Modifier.weight(1f)
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter(
+                            model = if (dayTime()) {
+                                day1State.icon
+                            } else {
+                                nightState1.icon
+                            }
+                        ),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize().padding(top = 0.dp)
 
-                Spacer(modifier = Modifier.weight(1f))
+                    )
+                }
 
                 FutureForecastCard(listOfStates)
                 Spacer(modifier = Modifier.padding(bottom = 50.dp))
