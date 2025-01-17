@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -237,6 +238,9 @@ fun FutureForecastCard(dayStates: List<DailyForecastViewState>) {
                                 model = dayStates[0].icon
                             ),
                             contentDescription = null,
+                            modifier = Modifier.clickable {
+                                //complete to switch days
+                            }
                         )
                         Text(
                             text = "${dayStates[0].temperature}/${dayStates[1].temperature}",
@@ -265,6 +269,9 @@ fun FutureForecastCard(dayStates: List<DailyForecastViewState>) {
                                 model = dayStates[2].icon,
                                 ),
                             contentDescription = null,
+                            modifier = Modifier.clickable {
+                                //complete to switch days
+                            }
                         )
                         Text(
                             text = "${dayStates[2].temperature}/${dayStates[3].temperature}",
@@ -295,6 +302,9 @@ fun FutureForecastCard(dayStates: List<DailyForecastViewState>) {
 
                                 ),
                             contentDescription = null,
+                            modifier = Modifier.clickable {
+                                //complete to switch days
+                            }
                         )
                         Text(
                             text = "${dayStates[4].temperature}/${dayStates[5].temperature}",
@@ -324,6 +334,9 @@ fun FutureForecastCard(dayStates: List<DailyForecastViewState>) {
                                 model = dayStates[6].icon
                                 ),
                             contentDescription = null,
+                            modifier = Modifier.clickable {
+                                //complete to switch days
+                            }
                         )
                         Text(
                             text = "${dayStates[6].temperature}/${dayStates[7].temperature}",
@@ -353,6 +366,9 @@ fun FutureForecastCard(dayStates: List<DailyForecastViewState>) {
                                 model = dayStates[8].icon
                                 ),
                             contentDescription = null,
+                            modifier = Modifier.clickable {
+                                //complete to switch days
+                            }
                         )
                         Text(
                             text = "${dayStates[8].temperature}/${dayStates[9].temperature}",
