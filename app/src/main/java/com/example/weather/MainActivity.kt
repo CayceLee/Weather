@@ -99,6 +99,15 @@ class MainActivity : ComponentActivity() {
     Repository ("datamodel") > Domain Model > VM > UI
      */
 
+    //MATT, I WANT TO MAKE THE ICONS(ONCE CLICKED) TO DISPLAY THAT
+    // DAY'S ICON, TEMPS, AND FORECAST.
+    // THE UI ISN'T COMPLETED YET, BUT IT'S STRONG ENOUGH TO WORK ON THE
+    // FUNCTIONALITY OF EVERYTHING.
+    // I THINK THIS IS AN ISSUE WITH FOLLOWING "UNIDIRECTIONAL DATA FLOW" WITH
+    // HOW I SET UP THE COMPOSABLES.
+    // SHOULD I JUST REMOVE THE SECOND COMPOSABLE AND RETURN IT BACK TO THE
+    // MAINSCREENUI IN ORDER TO PASS DATA ?
+
     @Composable
     fun MainScreenUI(modifier: Modifier) {
         val weatherState by weatherServiceVM.stateFlow.collectAsState()
@@ -204,7 +213,10 @@ class MainActivity : ComponentActivity() {
     }
 //}
 
+@Composable
+fun CurrentSelectedDay() {
 
+}
 
 @Composable
 fun FutureForecastCard(dayStates: List<DailyForecastViewState>) {

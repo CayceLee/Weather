@@ -288,7 +288,7 @@ class ForecastServiceViewModel: ViewModel() {
             }
         }
     }
-    fun trimDay(day: String) :String {
+    private fun trimDay(day: String) :String {
         val daysOfWeek = listOf(
             "Monday",
             "Tuesday",
