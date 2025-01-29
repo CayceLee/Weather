@@ -30,12 +30,11 @@ class ForecastServiceViewModel: ViewModel() {
             val currentForecast = currentWeather?.second
 
             var dailyForecastViewStateList = buildList<DailyForecastViewState> {
-                var stepSize = 2
+                var index = 0
                 currentForecast?.properties?.periods?.let {
-                    //verify stepSize is mutable during runtime
-                    for (i in it.indices step stepSize) {
-                        // if first entry is nighttime
-                        if (it[i]?.isDaytime == false && i == 0) {
+
+                    while (index <= (it.size-1)) {
+                        if (it[index]?.isDaytime == false && index == 0) {
                             it[0]?.let { first ->
                                 val nightViewState = NightViewState(
                                     shortForecast = first.shortForecast!!,
@@ -51,53 +50,54 @@ class ForecastServiceViewModel: ViewModel() {
                                     )
                                 )
                             }
-                        } else {
-                            it[i]?.let { day ->
-                                val dayVS = DayViewState(
-                                    shortForecast = day.shortForecast!!,
-                                    icon = day.icon!!,
-                                    tempUnit = day.temperatureUnit!!,
-                                    temperature = day.temperature!!,
-                                    dayOfWeek = day.name!!
+                            index+=1
+                    } else {
+                        it[index]?.let { day ->
+                            val dayVS = DayViewState(
+                                shortForecast = day.shortForecast!!,
+                                icon = day.icon!!,
+                                tempUnit = day.temperatureUnit!!,
+                                temperature = day.temperature!!,
+                                dayOfWeek = day.name!!
+                            )
+                            Log.d("dayVS", "$dayVS")
+                            val nightVS = NightViewState(
+                                shortForecast = it[index + 1]?.shortForecast!!,
+                                icon = it[index + 1]?.icon!!,
+                                tempUnit = it[index + 1]?.temperatureUnit!!,
+                                temperature = it[index + 1]?.temperature!!,
+                                dayOfWeek = it[index + 1]?.name!!
+                            )
+                            add(
+                                DailyForecastViewState(
+                                    dayViewState = dayVS,
+                                    nightViewState = nightVS
                                 )
-                                Log.d("dayVS", "$dayVS")
-                                val nightVS = NightViewState(
-                                    shortForecast = it[i + 1]?.shortForecast!!,
-                                    icon = it[i + 1]?.icon!!,
-                                    tempUnit = it[i + 1]?.temperatureUnit!!,
-                                    temperature = it[i + 1]?.temperature!!,
-                                    dayOfWeek = it[i + 1]?.name!!
-                                )
-                                add(
-                                    DailyForecastViewState(
-                                        dayViewState = dayVS,
-                                        nightViewState = nightVS
-                                    )
-                                )
-                                stepSize = 2
-                            }
+                            )
+                            index+=2
                         }
                     }
                 }
             }
-            Log.d("LIST: ", "${dailyForecastViewStateList}")
-            //
-            dailyForecastViewStateList.forEach {
-                val daysOfWeek = listOf(
-                    "Monday",
-                    "Tuesday",
-                    "Wednesday",
-                    "Thursday",
-                    "Friday",
-                    "Saturday",
-                    "Sunday"
-                )
-                if(daysOfWeek.contains(it.dayViewState.dayOfWeek)) {
-                    it.dayViewState.dayOfWeek.substring(0, 3)
-                } else {
-                    it.dayViewState.dayOfWeek = " "
-                }
+        }
+        Log.d("LIST: ", "${dailyForecastViewStateList}")
+        //
+        dailyForecastViewStateList.forEach {
+            val daysOfWeek = listOf(
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday"
+            )
+            if(daysOfWeek.contains(it.dayViewState.dayOfWeek)) {
+                it.dayViewState.dayOfWeek = it.dayViewState.dayOfWeek.substring(0, 3)
+            } else {
+                it.dayViewState.dayOfWeek = ""
             }
+        }
 
             dailyForecastViewStateList.forEach { today ->
                 val tomorrow = dailyForecastViewStateList[+1].dayViewState.dayOfWeek
@@ -110,12 +110,12 @@ class ForecastServiceViewModel: ViewModel() {
                     "Fri",
                     "Sat"
                 )
-                var previousDay = " "
+                var previousDay = ""
 
                 // if today is not a day of the week
                 if (!listOfWeekdays.contains(today.dayViewState.dayOfWeek)) {
                     //cycle through the list of days
-                    listOfWeekdays.forEach {
+                    listOfWeekdays.forEach { day ->
                         // and for each day, we check what day tomorrow is,
                         // to then set today using previous day
 
@@ -125,11 +125,11 @@ class ForecastServiceViewModel: ViewModel() {
                         }
                         // otherwise, if tomorrow is equal to the item in the list,
                         // return the previous day
-                        else if (tomorrow == it) {
+                        else if (tomorrow == day) {
                             today.dayViewState.dayOfWeek = previousDay
                         }
                         //if no day matched, set this current day to the previous day
-                        previousDay = today.dayViewState.dayOfWeek
+                        previousDay = day
 
                     }
 

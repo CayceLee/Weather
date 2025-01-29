@@ -127,11 +127,9 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MainScreenUI(modifier: Modifier) {
         val location by forecastServiceVM.weatherStateFlow.collectAsState()
-
         val forecast by forecastServiceVM.stateFlow.collectAsState()
 
         Log.d("Periods: ", "${forecast.weeklyForecast}")
-
 
             Column (
                 modifier = Modifier
@@ -152,11 +150,15 @@ class MainActivity : ComponentActivity() {
                     Text(
                         modifier = Modifier.padding(end = 20.dp, top = 40.dp),
                         fontSize = 40.sp,
-                        text = "${forecast.todaysHigh}" +
-                                "\u00B0/" +
-                                "${forecast.todaysLow}" +
-                                "\u00B0" +
-                                forecast.tempUnit,
+                        text = if (dayTime()) {
+                            "${forecast.todaysHigh}\u00B0/" +
+                            "${forecast.todaysLow}\u00B0" +
+                               forecast.tempUnit
+                        } else {
+                            "${forecast.todaysLow}\u00B0" +
+                                    forecast.tempUnit
+                        },
+
                         color = White
                     )
                 }
@@ -196,24 +198,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-//}
-
-
-//@Composable
-//fun SelectedDayImage(dayImage: String, nightImage: String) {
-//    Image(
-//        painter = rememberAsyncImagePainter(
-//            model = if (dayTime()) {
-//                dayImage
-//            } else {
-//                nightImage
-//            }
-//        ),
-//        contentDescription = null,
-//        modifier = Modifier.fillMaxSize().padding(top = 0.dp)
-//
-//    )
-//}
 
 @Composable
 fun FutureForecastCard(forecast: List<DailyForecastViewState>) {
