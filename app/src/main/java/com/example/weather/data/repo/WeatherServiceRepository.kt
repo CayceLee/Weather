@@ -24,10 +24,18 @@ class WeatherServiceRepository {
             .create(ForecastService::class.java)
 
 
-    suspend fun getWeather(latLonPair: String): WeatherMetaDataModel? {
+    suspend fun getWeather(latLonPair: String): Pair<WeatherMetaDataModel?, WeatherForecastMetaDataModel?>? {
         getWeatherService().getWeather(latLonPair).run {
             if (this.isSuccessful) {
-                return this.body()
+                val currentWeather = this.body()
+                val forecast = currentWeather?.properties?.forecast
+                val gridId = currentWeather?.properties?.gridId ?: ""
+                val gridX = currentWeather?.properties?.gridX ?: 0
+                val gridY = currentWeather?.properties?.gridY ?: 0
+                val city = currentWeather?.properties?.relativeLocation?.properties?.city
+                val state = currentWeather?.properties?.relativeLocation?.properties?.state
+                val currentForecast = getForecast(gridY = gridY, gridId = gridId, gridX = gridX )
+                return currentWeather to currentForecast
             } else {
                 return null
             }
