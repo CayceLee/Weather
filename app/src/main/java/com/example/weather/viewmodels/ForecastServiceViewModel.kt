@@ -1,6 +1,5 @@
 package com.example.weather.viewmodels
 
-import android.text.TextUtils.substring
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,7 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class ForecastServiceViewModel: ViewModel() {
+
+class ForecastServiceViewModel:  ViewModel() {
     private val _stateFlow = MutableStateFlow(WeeklyForecastViewState.Default)
     val stateFlow = _stateFlow.asStateFlow()
     private val _weatherStateFlow = MutableStateFlow(WeeklyWeatherViewState.Default)
@@ -146,7 +146,8 @@ class ForecastServiceViewModel: ViewModel() {
                         todaysLow = dailyForecastViewStateList[0].nightViewState.temperature,
                         tempUnit = dailyForecastViewStateList[0].dayViewState.tempUnit,
                         todaysShortForecast = dailyForecastViewStateList[0].dayViewState.shortForecast,
-                        tonightsShortForecast = dailyForecastViewStateList[0].nightViewState.shortForecast
+                        tonightsShortForecast = dailyForecastViewStateList[0].nightViewState.shortForecast,
+                        todaysDayOfWeek = dailyForecastViewStateList[0].nightViewState.dayOfWeek
                     )
 
                 }
@@ -156,6 +157,25 @@ class ForecastServiceViewModel: ViewModel() {
                 it.copy(
                     city = location?.city ?: "",
                     state = location?.state ?: ""
+                )
+            }
+        }
+    }
+
+    fun updateToday(dayForecast: DailyForecastViewState, weeklyForecast:List<DailyForecastViewState>) {
+
+        viewModelScope.launch(Dispatchers.IO){
+            _stateFlow.update {
+                it.copy(
+                    weeklyForecast = weeklyForecast,
+                    todaysIcon = dayForecast.dayViewState.icon,
+                    tonightsIcon = dayForecast.nightViewState.icon,
+                    todaysHigh = dayForecast.dayViewState.temperature,
+                    todaysLow = dayForecast.nightViewState.temperature,
+                    tempUnit = dayForecast.dayViewState.tempUnit,
+                    todaysShortForecast = dayForecast.dayViewState.shortForecast,
+                    tonightsShortForecast = dayForecast.nightViewState.shortForecast,
+                    todaysDayOfWeek = dayForecast.dayViewState.dayOfWeek
                 )
             }
         }
