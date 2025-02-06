@@ -3,6 +3,7 @@ package com.example.weather
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -114,19 +115,25 @@ class MainActivity : ComponentActivity() {
                 Text(
                     modifier = Modifier.padding(end = 20.dp, top = 40.dp),
                     fontSize = 40.sp,
-                    text = if ( dayTime() ||
-                        forecast.weeklyForecast[0].nightViewState.dayOfWeek !=
-                        forecast.todaysDayOfWeek) {
-                        "${forecast.todaysHigh}\u00B0/" +
-                        "${forecast.todaysLow}\u00B0" +
-                           forecast.tempUnit
-                    } else {
-                        "${forecast.todaysLow}\u00B0" +
-                                forecast.tempUnit
-                    },
+                    text = forecast.todaysDayOfWeek,
                     color = White
                 )
             }
+            Text(
+                modifier = Modifier.padding(end = 20.dp, top = 10.dp).align(Alignment.End),
+                fontSize = 40.sp,
+                text = if ( dayTime() ||
+                    forecast.weeklyForecast[0].nightViewState.dayOfWeek !=
+                    forecast.todaysDayOfWeek) {
+                    "${forecast.todaysHigh}\u00B0/" +
+                            "${forecast.todaysLow}\u00B0" +
+                            forecast.tempUnit
+                } else {
+                    "${forecast.todaysLow}\u00B0" +
+                            forecast.tempUnit
+                },
+                color = White
+            )
             Text(
                 modifier = Modifier
                     .align(Alignment.End)
@@ -157,7 +164,7 @@ class MainActivity : ComponentActivity() {
 
                 )
             }
-            FutureForecastCard(forecast.weeklyForecast, forecast)
+            FutureForecastCard(forecast.weeklyForecast)
             Spacer(modifier = Modifier.padding(bottom = 50.dp))
         }
     }
@@ -165,7 +172,6 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun FutureForecastCard(
         forecast: List<DailyForecastViewState>,
-        weeklyForecast: WeeklyForecastViewState
     ) {
         Box(
             Modifier
@@ -182,8 +188,7 @@ class MainActivity : ComponentActivity() {
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     forecast.forEach {
-
-                        IndividualForecast(it, weeklyForecast.weeklyForecast)
+                        IndividualForecast(it)
                     }
                 }
             }
@@ -192,8 +197,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun IndividualForecast(
-        forecast: DailyForecastViewState,
-        weeklyForecast: List<DailyForecastViewState>
+        forecast: DailyForecastViewState
     ) {
         Column {
             Text(
@@ -218,7 +222,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.clickable(
                         enabled = true,
                         onClick = {
-                            forecastServiceVM.updateToday(forecast, weeklyForecast)
+                            forecastServiceVM.updateToday(forecast)
                         }
                     )
                 )

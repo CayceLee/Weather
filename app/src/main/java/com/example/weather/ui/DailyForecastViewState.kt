@@ -35,7 +35,7 @@ data class NightViewState(
     val icon: String,
     val tempUnit: String,
     val temperature: Int,
-    val dayOfWeek: String
+    var dayOfWeek: String
 ) {
     companion object {
         val Default = NightViewState(

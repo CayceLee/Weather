@@ -94,8 +94,10 @@ class ForecastServiceViewModel:  ViewModel() {
             )
             if(daysOfWeek.contains(it.dayViewState.dayOfWeek)) {
                 it.dayViewState.dayOfWeek = it.dayViewState.dayOfWeek.substring(0, 3)
+                it.nightViewState.dayOfWeek = it.nightViewState.dayOfWeek.substring(0, 3)
             } else {
                 it.dayViewState.dayOfWeek = ""
+                it.nightViewState.dayOfWeek = ""
             }
         }
 
@@ -122,11 +124,13 @@ class ForecastServiceViewModel:  ViewModel() {
                         //if tomorrow is the first day in the list (Sun), return Sat
                         if (tomorrow == listOfWeekdays[0]) {
                             today.dayViewState.dayOfWeek = "Sat"
+                            today.nightViewState.dayOfWeek = "Sat"
                         }
                         // otherwise, if tomorrow is equal to the item in the list,
                         // return the previous day
                         else if (tomorrow == day) {
                             today.dayViewState.dayOfWeek = previousDay
+                            today.nightViewState.dayOfWeek = previousDay
                         }
                         //if no day matched, set this current day to the previous day
                         previousDay = day
@@ -162,12 +166,12 @@ class ForecastServiceViewModel:  ViewModel() {
         }
     }
 
-    fun updateToday(dayForecast: DailyForecastViewState, weeklyForecast:List<DailyForecastViewState>) {
+    fun updateToday(dayForecast: DailyForecastViewState) {
 
         viewModelScope.launch(Dispatchers.IO){
             _stateFlow.update {
                 it.copy(
-                    weeklyForecast = weeklyForecast,
+                    weeklyForecast = _stateFlow.value.weeklyForecast,
                     todaysIcon = dayForecast.dayViewState.icon,
                     tonightsIcon = dayForecast.nightViewState.icon,
                     todaysHigh = dayForecast.dayViewState.temperature,
@@ -175,7 +179,7 @@ class ForecastServiceViewModel:  ViewModel() {
                     tempUnit = dayForecast.dayViewState.tempUnit,
                     todaysShortForecast = dayForecast.dayViewState.shortForecast,
                     tonightsShortForecast = dayForecast.nightViewState.shortForecast,
-                    todaysDayOfWeek = dayForecast.dayViewState.dayOfWeek
+                    todaysDayOfWeek = dayForecast.nightViewState.dayOfWeek
                 )
             }
         }
