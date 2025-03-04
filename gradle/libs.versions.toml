@@ -1,4 +1,5 @@
 [versions]
+accompanistPermissions = "0.21.1-beta"
 agp = "8.7.3"
 androidxLifecycleRuntimeKtx = "2.4.0"
 coilCompose = "2.4.0"
@@ -17,6 +18,7 @@ playServicesLocation = "21.3.0"
 lifecycleRuntimeComposeAndroid = "2.8.7"
 
 [libraries]
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx-v240 = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidxLifecycleRuntimeKtx" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }

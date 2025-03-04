@@ -9,7 +9,8 @@ data class WeeklyForecastViewState(
     val tempUnit: String,
     val todaysShortForecast: String,
     val tonightsShortForecast: String,
-    val todaysDayOfWeek: String
+    val todaysDayOfWeek: String,
+    val todaysDaySubString: String
 ) {
     companion object {
         val Default = WeeklyForecastViewState(
@@ -21,7 +22,8 @@ data class WeeklyForecastViewState(
             tempUnit = "F",
             todaysShortForecast = "",
             tonightsShortForecast = "",
-            todaysDayOfWeek = ""
+            todaysDayOfWeek = "",
+            todaysDaySubString = ""
         )
     }
 }

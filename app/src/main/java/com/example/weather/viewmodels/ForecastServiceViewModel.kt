@@ -14,6 +14,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okio.IOException
+import org.json.JSONObject
+import java.util.concurrent.Executors
 
 
 class ForecastServiceViewModel:  ViewModel() {
@@ -26,7 +31,6 @@ class ForecastServiceViewModel:  ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
 
             val currentWeather = WeatherServiceRepository().getWeather(latLongString)
-            val location = currentWeather?.first?.properties?.relativeLocation?.properties
             val currentForecast = currentWeather?.second
 
             var dailyForecastViewStateList = buildList<DailyForecastViewState> {
@@ -41,7 +45,8 @@ class ForecastServiceViewModel:  ViewModel() {
                                     icon = first.icon!!,
                                     tempUnit = first.temperatureUnit!!,
                                     temperature = first.temperature!!,
-                                    dayOfWeek = first.name!!
+                                    dayOfWeek = first.name!!,
+                                    dayOfWeekSubstring = ""
                                 )
                                 add(
                                     DailyForecastViewState(
@@ -58,15 +63,16 @@ class ForecastServiceViewModel:  ViewModel() {
                                 icon = day.icon!!,
                                 tempUnit = day.temperatureUnit!!,
                                 temperature = day.temperature!!,
-                                dayOfWeek = day.name!!
+                                dayOfWeek = day.name!!,
+                                dayOfWeekSubstring = day.name
                             )
-                            Log.d("dayVS", "$dayVS")
                             val nightVS = NightViewState(
                                 shortForecast = it[index + 1]?.shortForecast!!,
                                 icon = it[index + 1]?.icon!!,
                                 tempUnit = it[index + 1]?.temperatureUnit!!,
                                 temperature = it[index + 1]?.temperature!!,
-                                dayOfWeek = it[index + 1]?.name!!
+                                dayOfWeek = it[index + 1]?.name!!,
+                                dayOfWeekSubstring = it[index + 1]?.name!!
                             )
                             add(
                                 DailyForecastViewState(
@@ -80,108 +86,155 @@ class ForecastServiceViewModel:  ViewModel() {
                 }
             }
         }
-        Log.d("LIST: ", "${dailyForecastViewStateList}")
-        //
-        dailyForecastViewStateList.forEach {
-            val daysOfWeek = listOf(
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-                "Sunday"
-            )
-            if(daysOfWeek.contains(it.dayViewState.dayOfWeek)) {
-                it.dayViewState.dayOfWeek = it.dayViewState.dayOfWeek.substring(0, 3)
-                it.nightViewState.dayOfWeek = it.nightViewState.dayOfWeek.substring(0, 3)
+        setFirstDay(dailyForecastViewStateList)
+        }
+    }
+
+    private fun setFirstDay(dayListViewState:  List<DailyForecastViewState>) {
+        val daysOfWeek = listOf(
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+        )
+        var today = ""
+        var tomorrow = ""
+        if (dayListViewState[1].dayViewState.dayOfWeek == "Monday") {
+            today = "Sunday"
+        } else {
+            tomorrow = dayListViewState[1].dayViewState.dayOfWeek
+            today = daysOfWeek[daysOfWeek.indexOf(tomorrow) -1]
+        }
+        dayListViewState[0].dayViewState.dayOfWeek = today
+        dayListViewState[0].nightViewState.dayOfWeek = today
+
+        dayListViewState.forEach {
+            it.nightViewState.dayOfWeek =
+                it.nightViewState.dayOfWeek.replace(" Night", "")
+
+            if (daysOfWeek.contains(it.dayViewState.dayOfWeek)) {
+                it.dayViewState.dayOfWeekSubstring = it.dayViewState.dayOfWeek.substring(0,3)
+                it.nightViewState.dayOfWeekSubstring = it.dayViewState.dayOfWeek.substring(0,3)
             } else {
-                it.dayViewState.dayOfWeek = ""
-                it.nightViewState.dayOfWeek = ""
+                it.dayViewState.dayOfWeekSubstring = ""
+                it.nightViewState.dayOfWeekSubstring = ""
             }
         }
 
-            dailyForecastViewStateList.forEach { today ->
-                val tomorrow = dailyForecastViewStateList[+1].dayViewState.dayOfWeek
-                val listOfWeekdays = listOf(
-                    "Sun",
-                    "Mon",
-                    "Tue",
-                    "Wed",
-                    "Thu",
-                    "Fri",
-                    "Sat"
-                )
-                var previousDay = ""
-
-                // if today is not a day of the week
-                if (!listOfWeekdays.contains(today.dayViewState.dayOfWeek)) {
-                    //cycle through the list of days
-                    listOfWeekdays.forEach { day ->
-                        // and for each day, we check what day tomorrow is,
-                        // to then set today using previous day
-
-                        //if tomorrow is the first day in the list (Sun), return Sat
-                        if (tomorrow == listOfWeekdays[0]) {
-                            today.dayViewState.dayOfWeek = "Sat"
-                            today.nightViewState.dayOfWeek = "Sat"
-                        }
-                        // otherwise, if tomorrow is equal to the item in the list,
-                        // return the previous day
-                        else if (tomorrow == day) {
-                            today.dayViewState.dayOfWeek = previousDay
-                            today.nightViewState.dayOfWeek = previousDay
-                        }
-                        //if no day matched, set this current day to the previous day
-                        previousDay = day
-
-                    }
-
-                }
+        if (dayListViewState.isNotEmpty()) {
+            _stateFlow.update {
+                it.updateFirstState(dayListViewState)
             }
+        }
+    }
 
-            if (dailyForecastViewStateList.isNotEmpty()) {
-                _stateFlow.update {
+    fun updateCityAndState(lat: Double, lon: Double) {
+        getCityStateFromCoordinates(lat, lon) { cityName, stateName ->
+            if (cityName != null && stateName != null) {
+                _weatherStateFlow.update {
                     it.copy(
-                        weeklyForecast = dailyForecastViewStateList.dropLast(2),
-                        todaysIcon = dailyForecastViewStateList[0].dayViewState.icon,
-                        tonightsIcon = dailyForecastViewStateList[0].nightViewState.icon,
-                        todaysHigh = dailyForecastViewStateList[0].dayViewState.temperature,
-                        todaysLow = dailyForecastViewStateList[0].nightViewState.temperature,
-                        tempUnit = dailyForecastViewStateList[0].dayViewState.tempUnit,
-                        todaysShortForecast = dailyForecastViewStateList[0].dayViewState.shortForecast,
-                        tonightsShortForecast = dailyForecastViewStateList[0].nightViewState.shortForecast,
-                        todaysDayOfWeek = dailyForecastViewStateList[0].nightViewState.dayOfWeek
+                        city = cityName,
+                        state = stateName
                     )
-
                 }
-            }
-
-            _weatherStateFlow.update {
-                it.copy(
-                    city = location?.city ?: "",
-                    state = location?.state ?: ""
-                )
+                Log.d("Location", "City: $cityName, State: $stateName")
+            } else {
+                Log.e("Location", "Failed to retrieve city and state")
             }
         }
     }
 
     fun updateToday(dayForecast: DailyForecastViewState) {
-
         viewModelScope.launch(Dispatchers.IO){
             _stateFlow.update {
-                it.copy(
-                    weeklyForecast = _stateFlow.value.weeklyForecast,
-                    todaysIcon = dayForecast.dayViewState.icon,
-                    tonightsIcon = dayForecast.nightViewState.icon,
-                    todaysHigh = dayForecast.dayViewState.temperature,
-                    todaysLow = dayForecast.nightViewState.temperature,
-                    tempUnit = dayForecast.dayViewState.tempUnit,
-                    todaysShortForecast = dayForecast.dayViewState.shortForecast,
-                    tonightsShortForecast = dayForecast.nightViewState.shortForecast,
-                    todaysDayOfWeek = dayForecast.nightViewState.dayOfWeek
-                )
+                it.updateState(dayForecast, _stateFlow.value.weeklyForecast)
             }
+        }
+    }
+}
+
+fun  WeeklyForecastViewState.updateFirstState(
+    dailyForecastViewStateList: List<DailyForecastViewState>
+): WeeklyForecastViewState {
+    return this.copy(
+        weeklyForecast = dailyForecastViewStateList.dropLast(2),
+        todaysIcon = dailyForecastViewStateList.first().dayViewState.icon,
+        tonightsIcon = dailyForecastViewStateList.first().nightViewState.icon,
+        todaysHigh = dailyForecastViewStateList.first().dayViewState.temperature,
+        todaysLow = dailyForecastViewStateList.first().nightViewState.temperature,
+        tempUnit = dailyForecastViewStateList.first().dayViewState.tempUnit,
+        todaysShortForecast = dailyForecastViewStateList.first().dayViewState.shortForecast,
+        tonightsShortForecast = dailyForecastViewStateList.first().nightViewState.shortForecast,
+        todaysDayOfWeek = dailyForecastViewStateList.first().nightViewState.dayOfWeek,
+        todaysDaySubString = dailyForecastViewStateList.first().nightViewState.dayOfWeekSubstring
+    )
+}
+
+fun WeeklyForecastViewState.updateState(
+    dayForecast: DailyForecastViewState,
+    weeklyForecast: List<DailyForecastViewState>
+): WeeklyForecastViewState {
+    return this.copy(
+        weeklyForecast = weeklyForecast,
+        todaysIcon = dayForecast.dayViewState.icon,
+        tonightsIcon = dayForecast.nightViewState.icon,
+        todaysHigh = dayForecast.dayViewState.temperature,
+        todaysLow = dayForecast.nightViewState.temperature,
+        tempUnit = dayForecast.dayViewState.tempUnit,
+        todaysShortForecast = dayForecast.dayViewState.shortForecast,
+        tonightsShortForecast = dayForecast.nightViewState.shortForecast,
+        todaysDayOfWeek = dayForecast.nightViewState.dayOfWeek,
+        todaysDaySubString = dayForecast.nightViewState.dayOfWeekSubstring
+    )
+}
+
+//fun ForecastServiceViewModel.newFun(s:String ): String {
+//
+//    stateFlow.value.weeklyForecast[0].nightViewState.dayOfWeek = s
+//    return s
+//}
+//fun ForecastServiceViewModel.newFun1(s:String ) = s
+//
+//fun ForecastServiceViewModel.newFun2(s:String ) = operation(s)
+//
+//fun operation(s:String): String {
+//    return s.substring(2)
+//}
+
+fun getCityStateFromCoordinates(latitude: Double, longitude: Double, callback: (String?, String?) -> Unit) {
+    val client = OkHttpClient()
+    val url = "https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude"
+
+    // Run network request in a background thread
+    Executors.newSingleThreadExecutor().execute {
+        try {
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", "Weather") // Required by Nominatim API
+                .build()
+
+            val response = client.newCall(request).execute()
+            val responseData = response.body?.string()
+
+            if (!response.isSuccessful || responseData.isNullOrEmpty()) {
+                callback(null, null)
+                return@execute
+            }
+
+            val jsonObject = JSONObject(responseData)
+            val address = jsonObject.optJSONObject("address")
+
+            val city = address?.optString("city") ?: address?.optString("town") ?: address?.optString("village")
+            val state = address?.optString("state")
+
+            callback(city, state)
+
+        } catch (e: IOException) {
+            e.printStackTrace()
+            callback(null, null)
         }
     }
 }

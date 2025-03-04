@@ -1,7 +1,7 @@
 package com.example.weather.data.repo
 
-import com.example.weather.data.WeatherForecastMetaDataModel
-import com.example.weather.data.WeatherMetaDataModel
+import com.example.weather.data.models.WeatherForecastMetaDataModel
+import com.example.weather.data.models.WeatherMetaDataModel
 import com.example.weather.data.service.ForecastService
 import com.example.weather.data.service.WeatherService
 import retrofit2.Retrofit
@@ -28,12 +28,9 @@ class WeatherServiceRepository {
         getWeatherService().getWeather(latLonPair).run {
             if (this.isSuccessful) {
                 val currentWeather = this.body()
-                val forecast = currentWeather?.properties?.forecast
                 val gridId = currentWeather?.properties?.gridId ?: ""
                 val gridX = currentWeather?.properties?.gridX ?: 0
                 val gridY = currentWeather?.properties?.gridY ?: 0
-                val city = currentWeather?.properties?.relativeLocation?.properties?.city
-                val state = currentWeather?.properties?.relativeLocation?.properties?.state
                 val currentForecast = getForecast(gridY = gridY, gridId = gridId, gridX = gridX )
                 return currentWeather to currentForecast
             } else {

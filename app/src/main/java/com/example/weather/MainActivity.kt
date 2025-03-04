@@ -39,11 +39,14 @@ import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import com.example.weather.ui.DailyForecastViewState
-import com.example.weather.ui.WeeklyForecastViewState
 import com.example.weather.ui.theme.WeatherTheme
 import com.example.weather.viewmodels.ForecastServiceViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationToken
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.android.gms.tasks.OnTokenCanceledListener
 import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
@@ -52,8 +55,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        fusedLocationProvider = LocationServices.getFusedLocationProviderClient(this)
 
         if ((ActivityCompat.checkSelfPermission(
                 this,
@@ -68,19 +69,38 @@ class MainActivity : ComponentActivity() {
                 this,
                 arrayOf(
                     android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
                 ),
                 400
             )
             return
         }
 
-        fusedLocationProvider.lastLocation.addOnSuccessListener(this) { location: Location? ->
-            if (location != null) {
-                forecastServiceVM.retrieveForecast(
+        fusedLocationProvider = LocationServices.getFusedLocationProviderClient(this)
+
+        fusedLocationProvider.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, object : CancellationToken() {
+            override fun onCanceledRequested(p0: OnTokenCanceledListener) = CancellationTokenSource().token
+            override fun isCancellationRequested() = false
+        })
+            .addOnSuccessListener { location: Location? ->
+                if (location == null)
+                    fusedLocationProvider.lastLocation.addOnSuccessListener(this) { lastLocation: Location? ->
+                        if (lastLocation != null) {
+                            forecastServiceVM.retrieveForecast(
+                                "${lastLocation.latitude}${lastLocation.longitude}"
+                            )
+                        }
+                    }
+                else {
+                    forecastServiceVM.retrieveForecast(
                     "${location.latitude},${location.longitude}"
-                )
+                    )
+                    Log.d("Location", "${location.latitude}, ${location.longitude}")
+                    val lat = location.latitude
+                    val lon = location.longitude
+                    forecastServiceVM.updateCityAndState(lat, lon)
+                }
             }
-        }
 
         setContent {
             WeatherTheme {
@@ -97,6 +117,7 @@ class MainActivity : ComponentActivity() {
         val location by forecastServiceVM.weatherStateFlow.collectAsState()
         val forecast by forecastServiceVM.stateFlow.collectAsStateWithLifecycle()
 
+        val cityAndState = "${location.city}, ${location.state}"
         Column (
             modifier = Modifier
                 .fillMaxSize()
@@ -108,7 +129,7 @@ class MainActivity : ComponentActivity() {
                 Text(
                     modifier = Modifier
                         .padding(start = 20.dp, top = 50.dp),
-                    text = "${location.city} , ${location.state}",
+                    text = if (location.city.isEmpty()) "" else cityAndState,
                     color = White
                 )
                 Spacer(modifier = Modifier.weight(1f))
@@ -120,7 +141,9 @@ class MainActivity : ComponentActivity() {
                 )
             }
             Text(
-                modifier = Modifier.padding(end = 20.dp, top = 10.dp).align(Alignment.End),
+                modifier = Modifier
+                    .padding(end = 20.dp, top = 10.dp)
+                    .align(Alignment.End),
                 fontSize = 40.sp,
                 text = if ( dayTime() ||
                     forecast.weeklyForecast[0].nightViewState.dayOfWeek !=
@@ -190,6 +213,7 @@ class MainActivity : ComponentActivity() {
                     forecast.forEach {
                         IndividualForecast(it)
                     }
+
                 }
             }
         }
@@ -201,7 +225,7 @@ class MainActivity : ComponentActivity() {
     ) {
         Column {
             Text(
-                text = forecast.dayViewState.dayOfWeek,
+                text = forecast.dayViewState.dayOfWeekSubstring,
                 modifier = Modifier.align(alignment = Alignment.CenterHorizontally),
                 color = White
             )
